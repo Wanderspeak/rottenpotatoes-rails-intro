@@ -12,6 +12,7 @@ class MoviesController < ApplicationController
 
   def index
     @all_ratings = ['G','PG','PG-13','R']
+    @checked_ratings = Hash.new
     if params[:sort] == "title"
       @movies = Movie.order(:title)
       @title_header = 'hilite'
@@ -20,8 +21,11 @@ class MoviesController < ApplicationController
       @release_date_header = 'hilite'
     elsif params[:ratings]
       @movies = Movie.where(rating: params[:ratings].keys)
+      @all_ratings.each { |rating| @checked_ratings[rating] = false }
+      params[:ratings].each { |rating, val| @checked_ratings[rating] = true }
     else
       @movies = Movie.all
+      @all_ratings.each { |rating| @checked_ratings[rating] = true }
     end
   end
 
