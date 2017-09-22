@@ -11,21 +11,36 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @all_ratings = ['G','PG','PG-13','R']
-    @checked_ratings = Hash.new
+    @all_ratings = ['G','PG','PG-13','R']  #Movie.get_ratings <- doesn't work for some reason
+    if params[:ratings]
+      @movies = Movie.where(rating: params[:ratings].keys)
+      #@all_ratings.each { |rating| session[:checked_ratings][rating] = false }
+      session.delete(:checked_ratings)
+      params[:ratings].each { |rating| session[:checked_ratings][rating.key] = true }
+    elsif session[:checked_ratings]
+      #flash.keep
+      #redirect_to movies_path(ratings: session[:checked_ratings]) <- couldn't get redirect to work
+      @movies = Movie.where(rating: session[:checked_ratings].keys)
+    else
+      session[:checked_ratings] = Hash.new
+      @all_ratings.each { |rating| session[:checked_ratings][rating] = true }
+      @movies = Movie.all
+    end
+    @checked_ratings = session[:checked_ratings] # <- THIS IS NOT NIL. THIS SHOULD NEVER BE NIL. WHY DOES IT SAY IT'S NIL. WHY THE F*
     if params[:sort] == "title"
-      @movies = Movie.order(:title)
+      session[:sorting] = "title"
+      @movies = @movies.order(:title)
       @title_header = 'hilite'
     elsif params[:sort] == "release_date"
-      @movies = Movie.all.sort { |a, b| a.release_date.to_i <=> b.release_date.to_i }
+      session[:sorting] = "release_date"
+      @movies = @movies.sort { |a, b| a.release_date.to_i <=> b.release_date.to_i }
       @release_date_header = 'hilite'
-    elsif params[:ratings]
-      @movies = Movie.where(rating: params[:ratings].keys)
-      @all_ratings.each { |rating| @checked_ratings[rating] = false }
-      params[:ratings].each { |rating, val| @checked_ratings[rating] = true }
-    else
-      @movies = Movie.all
-      @all_ratings.each { |rating| @checked_ratings[rating] = true }
+    elsif session[:sorting] == "title"
+      @movies = @movies.order(:title)
+      @title_header = 'hilite'
+    elsif session[:sorting] == "release_date"
+      @movies = @movies.sort { |a, b| a.release_date.to_i <=> b.release_date.to_i }
+      @release_date_header = 'hilite'
     end
   end
 
